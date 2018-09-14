@@ -899,6 +899,12 @@ class ClientTest extends TestCase
             ->once()
             ->andReturn(201);
 
+	    $responseMock
+		    ->shouldReceive('getHeader')
+		    ->with('Location')
+		    ->once()
+		    ->andReturn(['https://www.example.com']);
+
         $this->tusClientMock
             ->shouldReceive('getChecksum')
             ->once()
@@ -925,6 +931,7 @@ class ClientTest extends TestCase
             ->andReturn($responseMock);
 
         $this->assertEmpty($this->tusClientMock->create($key));
+        $this->assertSame('https://www.example.com', $this->tusClientMock->getLocation());
     }
 
     /**
@@ -945,6 +952,12 @@ class ClientTest extends TestCase
             ->shouldReceive('getStatusCode')
             ->once()
             ->andReturn(201);
+
+	    $responseMock
+		    ->shouldReceive('getHeader')
+		    ->with('Location')
+		    ->once()
+		    ->andReturn([]);
 
         $this->tusClientMock
             ->shouldReceive('getChecksum')
@@ -978,9 +991,71 @@ class ClientTest extends TestCase
             ->andReturn($responseMock);
 
         $this->assertEmpty($this->tusClientMock->create($key));
+        $this->assertSame('', $this->tusClient->getLocation());
     }
 
-    /**
+	/**
+	 * @test
+	 *
+	 * @covers ::create
+	 */
+	public function it_sets_the_location_header_if_the_response_has_it()
+	{
+		$key          = uniqid();
+		$checksum     = '74f02d6da32082463e382f2274e85fd8eae3e81f739f8959abc91865656e3b3a';
+		$filePath     = __DIR__ . '/../Fixtures/empty.txt';
+		$fileName     = 'file.txt';
+		$guzzleMock   = m::mock(Client::class);
+		$responseMock = m::mock(Response::class);
+
+		$responseMock
+			->shouldReceive('getStatusCode')
+			->once()
+			->andReturn(201);
+
+		$responseMock
+			->shouldReceive('getHeader')
+			->with('Location')
+			->once()
+			->andReturn(['https://www.example.com', 'https://www.example2.com']);
+
+		$this->tusClientMock
+			->shouldReceive('getChecksum')
+			->once()
+			->andReturn($checksum);
+
+		$this->tusClientMock
+			->shouldReceive('getClient')
+			->once()
+			->andReturn($guzzleMock);
+
+		$this->tusClientMock
+			->shouldReceive('isPartial')
+			->once()
+			->andReturn(true);
+
+		$this->tusClientMock->file($filePath, $fileName);
+
+		$guzzleMock
+			->shouldReceive('post')
+			->once()
+			->with('/files', [
+				'headers' => [
+					'Upload-Length' => filesize($filePath),
+					'Upload-Key' => $key,
+					'Upload-Checksum' => 'sha256 ' . base64_encode($checksum),
+					'Upload-Metadata' => 'filename ' . base64_encode($fileName),
+					'Upload-Concat' => 'partial',
+				],
+			])
+			->andReturn($responseMock);
+
+
+		$this->assertEmpty($this->tusClientMock->create($key));
+		$this->assertSame("https://www.example.com\nhttps://www.example2.com", $this->tusClientMock->getLocation());
+	}
+
+	/**
      * @test
      *
      * @covers ::create
