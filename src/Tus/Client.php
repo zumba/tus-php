@@ -299,12 +299,12 @@ class Client extends AbstractTus
     public function create($key)
     {
     	$key = strval($key);
-        $headers = array_merge([
+        $headers = [
             'Upload-Length' => $this->fileSize,
             'Upload-Key' => $key,
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
             'Upload-Metadata' => 'filename ' . base64_encode($this->fileName),
-        ], $this->getCustomHeaders());
+        ] + $this->getCustomHeaders();
 
         if ($this->isPartial()) {
             $headers += ['Upload-Concat' => 'partial'];
@@ -333,13 +333,13 @@ class Client extends AbstractTus
     {
     	$key = strval($key);
         $response = $this->getClient()->post($this->apiPath, [
-            'headers' => array_merge([
+            'headers' => [
                 'Upload-Length' => $this->fileSize,
                 'Upload-Key' => $key,
                 'Upload-Checksum' => $this->getUploadChecksumHeader(),
                 'Upload-Metadata' => 'filename ' . base64_encode($this->fileName),
                 'Upload-Concat' => self::UPLOAD_TYPE_FINAL . ';' . implode(' ', $partials),
-            ], $this->getCustomHeaders())
+            ] + $this->getCustomHeaders()
         ]);
 
         $data       = json_decode($response->getBody(), true);
@@ -367,9 +367,9 @@ class Client extends AbstractTus
     	$key = strval($key);
         try {
             $this->getClient()->delete($this->apiPath . '/' . $key, [
-                'headers' => array_merge([
+                'headers' => [
                     'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
-                ], $this->getCustomHeaders())
+                ] + $this->getCustomHeaders()
             ]);
         } catch (ClientException $e) {
             $statusCode = $e->getResponse()->getStatusCode();
@@ -444,11 +444,11 @@ class Client extends AbstractTus
     	$key = strval($key);
     	$bytes = intval($bytes);
         $data    = $this->getData($key, $bytes);
-        $headers = array_merge([
+        $headers = [
             'Content-Type' => 'application/offset+octet-stream',
             'Content-Length' => strlen($data),
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
-        ], $this->getCustomHeaders());
+        ] + $this->getCustomHeaders();
 
         if ($this->isPartial()) {
             $headers += ['Upload-Concat' => self::UPLOAD_TYPE_PARTIAL];
