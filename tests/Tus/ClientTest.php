@@ -472,7 +472,9 @@ class ClientTest extends TestCase
         $guzzleMock
             ->shouldReceive('head')
             ->once()
-            ->with('/files/' . $checksum)
+            ->with('/files/' . $checksum, [
+                'headers' => ['Test-Header' => 'test-header']
+            ])
             ->andReturn($responseMock);
 
         $responseMock
@@ -491,6 +493,7 @@ class ClientTest extends TestCase
             ->with('upload-offset')
             ->andReturn([100]);
 
+        $this->tusClientMock->setCustomHeaders(['Test-Header' => 'test-header']);
         $this->assertEquals(100, $this->tusClientMock->sendHeadRequest($checksum));
     }
 
@@ -512,7 +515,7 @@ class ClientTest extends TestCase
         $guzzleMock
             ->shouldReceive('head')
             ->once()
-            ->with('/files/' . $checksum)
+            ->with('/files/' . $checksum, ['headers' => []])
             ->andReturn($responseMock);
 
         $responseMock

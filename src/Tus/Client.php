@@ -41,6 +41,9 @@ class Client extends AbstractTus
     /** @var string */
     protected $checksumAlgorithm = 'sha256';
 
+    /** @var string[] */
+    protected $customHeaders = [];
+
     /**
      * Client constructor.
      *
@@ -296,12 +299,12 @@ class Client extends AbstractTus
     public function create($key)
     {
     	$key = strval($key);
-        $headers = [
+        $headers = array_merge([
             'Upload-Length' => $this->fileSize,
             'Upload-Key' => $key,
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
             'Upload-Metadata' => 'filename ' . base64_encode($this->fileName),
-        ];
+        ], $this->getCustomHeaders());
 
         if ($this->isPartial()) {
             $headers += ['Upload-Concat' => 'partial'];
@@ -330,13 +333,13 @@ class Client extends AbstractTus
     {
     	$key = strval($key);
         $response = $this->getClient()->post($this->apiPath, [
-            'headers' => [
+            'headers' => array_merge([
                 'Upload-Length' => $this->fileSize,
                 'Upload-Key' => $key,
                 'Upload-Checksum' => $this->getUploadChecksumHeader(),
                 'Upload-Metadata' => 'filename ' . base64_encode($this->fileName),
                 'Upload-Concat' => self::UPLOAD_TYPE_FINAL . ';' . implode(' ', $partials),
-            ],
+            ], $this->getCustomHeaders())
         ]);
 
         $data       = json_decode($response->getBody(), true);
@@ -364,9 +367,9 @@ class Client extends AbstractTus
     	$key = strval($key);
         try {
             $this->getClient()->delete($this->apiPath . '/' . $key, [
-                'headers' => [
+                'headers' => array_merge([
                     'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
-                ],
+                ], $this->getCustomHeaders())
             ]);
         } catch (ClientException $e) {
             $statusCode = $e->getResponse()->getStatusCode();
@@ -414,7 +417,7 @@ class Client extends AbstractTus
     protected function sendHeadRequest($key)
     {
     	$key = strval($key);
-        $response   = $this->getClient()->head($this->apiPath . '/' . $key);
+        $response   = $this->getClient()->head($this->apiPath . '/' . $key, ['headers' => $this->getCustomHeaders()]);
         $statusCode = $response->getStatusCode();
 
         if (HttpResponse::HTTP_OK !== $statusCode) {
@@ -441,11 +444,11 @@ class Client extends AbstractTus
     	$key = strval($key);
     	$bytes = intval($bytes);
         $data    = $this->getData($key, $bytes);
-        $headers = [
+        $headers = array_merge([
             'Content-Type' => 'application/offset+octet-stream',
             'Content-Length' => strlen($data),
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
-        ];
+        ], $this->getCustomHeaders());
 
         if ($this->isPartial()) {
             $headers += ['Upload-Concat' => self::UPLOAD_TYPE_PARTIAL];
@@ -514,4 +517,22 @@ class Client extends AbstractTus
     {
         return $this->getChecksumAlgorithm() . ' ' . base64_encode($this->getChecksum());
     }
+
+	/**
+	 * Get the custom headers.
+	 *
+	 * @return string[]
+	 */
+	public function getCustomHeaders() {
+		return $this->customHeaders;
+	}
+
+	/**
+	 * Set the custom headers.
+	 *
+	 * @param string[] $customHeaders
+	 */
+	public function setCustomHeaders(array $customHeaders) {
+		$this->customHeaders = $customHeaders;
+	}
 }
