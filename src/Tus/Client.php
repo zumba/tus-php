@@ -302,6 +302,9 @@ class Client extends AbstractTus
     public function create($key)
     {
         $key = strval($key);
+        if ($this->fileName === null) {
+        	throw new \UnexpectedValueException("Missing filename");
+        }
         $headers = [
             'Upload-Length' => $this->fileSize,
             'Upload-Key' => $key,
@@ -543,9 +546,9 @@ class Client extends AbstractTus
     /**
      * Get the value of the "Location" header after calling create().
      *
-     * @return string
+     * @return string[]
      */
     public function getLocation() {
-        return implode("\n", $this->location);
+        return $this->location;
     }
 }

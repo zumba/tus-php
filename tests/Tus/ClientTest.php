@@ -931,7 +931,7 @@ class ClientTest extends TestCase
             ->andReturn($responseMock);
 
         $this->assertEmpty($this->tusClientMock->create($key));
-        $this->assertSame('https://www.example.com', $this->tusClientMock->getLocation());
+        $this->assertEquals(['https://www.example.com'], $this->tusClientMock->getLocation());
     }
 
     /**
@@ -991,7 +991,7 @@ class ClientTest extends TestCase
             ->andReturn($responseMock);
 
         $this->assertEmpty($this->tusClientMock->create($key));
-        $this->assertSame('', $this->tusClient->getLocation());
+        $this->assertEquals([], $this->tusClient->getLocation());
     }
 
 	/**
@@ -1052,7 +1052,7 @@ class ClientTest extends TestCase
 
 
 		$this->assertEmpty($this->tusClientMock->create($key));
-		$this->assertSame("https://www.example.com\nhttps://www.example2.com", $this->tusClientMock->getLocation());
+		$this->assertEquals(["https://www.example.com", "https://www.example2.com"], $this->tusClientMock->getLocation());
 	}
 
 	/**
