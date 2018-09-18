@@ -27,9 +27,10 @@ class Config
         if (is_array($config)) {
             self::$config = $config;
         } else {
-            self::$config = require $config;
-            if (self::$config === null) {
-	            self::$config = self::DEFAULT_CONFIG_PATH;
+            if (!empty($config) && file_exists($config)) {
+                self::$config = require $config;
+            } else {
+                self::$config = self::DEFAULT_CONFIG_PATH;
             }
         }
     }
